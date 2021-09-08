@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.io as sio
+from sklearn.model_selection import train_test_split
 import os
 import gc
 
@@ -18,6 +20,12 @@ def gen_random_pix_samples(X, y, window_size=25, ns_per_class=50):
     """
     -----------------------
     grabs random pixel samples (stratified) 
+    Specific for 3D-CNN-LSTM-AE model. Training chips are 
+    images, where the centre pixel is the label (class id). 
+
+    Obtains random pixel coordinates for each class in the image. 
+    At each pixel coordinate, the label-ID is obtained, and a window
+    is drawn around each pixel - extracted as a sample. 
     -----------------------
     :param X: (np.ndarray) representing hyperspectral image (rows, cols, bands)
     :param y: (np.array) representing 2d labeled image (rows, cols) 
@@ -51,10 +59,10 @@ def gen_random_pix_samples(X, y, window_size=25, ns_per_class=50):
             row_idx, col_idx = np.where(y==label)
 
             # shuffle row, col idx 
-            np.random.seed(131)
+            np.random.seed(161)
             np.random.shuffle(row_idx)
 
-            np.random.seed(131)
+            np.random.seed(161)
             np.random.shuffle(col_idx)
 
             # get number up to ns per class 
@@ -72,10 +80,16 @@ def gen_random_pix_samples(X, y, window_size=25, ns_per_class=50):
                     # grab pixel box around centre coord 
                     X_train = X[crw-bfr:crw+bfr+1,
                                 ccl-bfr:ccl+bfr+1,:]
-    
-                    plt.plot(bfr, bfr,'b+', markersize=20)
-                    plt.imshow(X_train[:,:,0])
-                    plt.show()
+
+                    ### Visualize samples ###     
+                    # plt.title(f'Class ID {str(y_train)}')
+                    # plt.plot(bfr, bfr,'b+', markersize=20)
+                    # plt.imshow((X_train[:,:,[50,30,17]]/8000)*1.5, vmin=0, vmax=1)
+                    # plt.show()
+
+            ## split into train, validation, and testing chips 
+            ## save chips into respective directories 
+            
 
                 # exit()
 
@@ -88,7 +102,6 @@ X_train, y_train, X_test, y_test = loadData(r'C:\Users\agraham1\Documents\Python
                 r'C:\Users\agraham1\Documents\PythonScripts\Hyperspectral_AI_Benchmarks\datasets\Pavia\ground_truth\PaviaU_gt.mat', 
 
 )
-
 
 gen_random_pix_samples(X_train, y_train, window_size=25, ns_per_class=2)
 

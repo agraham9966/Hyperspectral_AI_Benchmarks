@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io as sio
 from sklearn.model_selection import train_test_split
+import tensorflow as tf
 import os
 import gc
 
@@ -35,6 +36,9 @@ def gen_random_pix_samples(X, y, window_size=25, ns_per_class=50):
     outputs samples saved to directory 
     """
 
+    X_save_path = r'C:\Users\agraham1\Documents\PythonScripts\Hyperspectral_AI_Benchmarks\datasets\Pavia\PaviaC_TrainTest\train\X'
+    y_save_path = r'C:\Users\agraham1\Documents\PythonScripts\Hyperspectral_AI_Benchmarks\datasets\Pavia\PaviaC_TrainTest\train\y'
+
     bfr = int((window_size-1)/2) # buffer  
 
     # pad bands and rows so the centre pixel labels 
@@ -48,11 +52,13 @@ def gen_random_pix_samples(X, y, window_size=25, ns_per_class=50):
             )
 
     labels, counts = np.unique(y, return_counts=True)
-   
+    n_classes = len(labels) - 1 # subtract 0 labels
+
     # assumes first class == 0 (no data/label)
     # samples per class
     # ns_per_class = np.min(counts[1:])
 
+    sample_num = 0 
     for label in labels: 
         if label !=0: 
             print(f'generating training data for label ID {label}')
@@ -68,10 +74,15 @@ def gen_random_pix_samples(X, y, window_size=25, ns_per_class=50):
             # get number up to ns per class 
             for i, j in enumerate(zip(row_idx, col_idx)): 
                 if i < ns_per_class: 
+                    sample_num+=1
 
                 # grab centre pixel as label from y 
                 # buffer and crop area around pixel - assign as X sample 
                     y_train = y[j[0],j[1]]
+
+                    #subtract 1 since we removed background  
+                    y_train = tf.keras.utils.to_categorical(y_train-1, 
+                                                        num_classes=n_classes)
                         
                     # corrected centre pixel coord
                     # accounts for padding added to X 
@@ -82,27 +93,36 @@ def gen_random_pix_samples(X, y, window_size=25, ns_per_class=50):
                                 ccl-bfr:ccl+bfr+1,:]
 
                     ### Visualize samples ###     
-                    # plt.title(f'Class ID {str(y_train)}')
+                    # plt.subplot(1,2,1)
+                    # plt.title('RGB')
                     # plt.plot(bfr, bfr,'b+', markersize=20)
                     # plt.imshow((X_train[:,:,[50,30,17]]/8000)*1.5, vmin=0, vmax=1)
+
+                    # plt.subplot(1,2,2)
+                    # plt.title(f'Label: Class ID {str(y_train)}')
+                    # plt.plot(bfr, bfr,'b+', markersize=20)
+                    # plt.imshow(y[j[0]-bfr:j[0]+bfr+1,
+                    #             j[1]-bfr:j[1]+bfr+1])
+                    
                     # plt.show()
 
-            ## split into train, validation, and testing chips 
-            ## save chips into respective directories 
-            
+                    ## save chips into respective directories 
+                    # shuffle samples before training 
+                    np.save(X_save_path + os.sep + f'{sample_num}_X.npy', 
+                            np.expand_dims(X_train, axis=-1))
+                    
+                    np.save(y_save_path + os.sep + f'{sample_num}_y.npy', 
+                            y_train)
 
-                # exit()
 
     return 
 
-
-X_train, y_train, X_test, y_test = loadData(r'C:\Users\agraham1\Documents\PythonScripts\Hyperspectral_AI_Benchmarks\datasets\Pavia\images\PaviaC.mat', 
-                r'C:\Users\agraham1\Documents\PythonScripts\Hyperspectral_AI_Benchmarks\datasets\Pavia\ground_truth\PaviaC_gt.mat', 
-                r'C:\Users\agraham1\Documents\PythonScripts\Hyperspectral_AI_Benchmarks\datasets\Pavia\images\PaviaU.mat', 
-                r'C:\Users\agraham1\Documents\PythonScripts\Hyperspectral_AI_Benchmarks\datasets\Pavia\ground_truth\PaviaU_gt.mat', 
-
-)
-
-gen_random_pix_samples(X_train, y_train, window_size=25, ns_per_class=2)
+if __name__ == '__main__': 
+    X_train, y_train, X_test, y_test = loadData(r'C:\Users\agraham1\Documents\PythonScripts\Hyperspectral_AI_Benchmarks\datasets\Pavia\images\PaviaC.mat', 
+                    r'C:\Users\agraham1\Documents\PythonScripts\Hyperspectral_AI_Benchmarks\datasets\Pavia\ground_truth\PaviaC_gt.mat', 
+                    r'C:\Users\agraham1\Documents\PythonScripts\Hyperspectral_AI_Benchmarks\datasets\Pavia\images\PaviaU.mat', 
+                    r'C:\Users\agraham1\Documents\PythonScripts\Hyperspectral_AI_Benchmarks\datasets\Pavia\ground_truth\PaviaU_gt.mat')
+    
+    gen_random_pix_samples(X_train, y_train, window_size=25, ns_per_class=20)
 
 

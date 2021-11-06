@@ -45,6 +45,8 @@ def SSH_CNN(n_classes=10, input_shape=(24,24,10,1)):
     model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
     model.summary()
 
-    return 
+    return model
+
+
 
 
